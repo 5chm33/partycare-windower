@@ -1,0 +1,4 @@
+tests/
+docs/
+*.zip
+*.sha256
