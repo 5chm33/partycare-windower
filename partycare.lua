@@ -1,6 +1,6 @@
 _addon.name = 'partycare'
 _addon.author = 'Schmeee'
-_addon.version = '1.2.0-windower'
+_addon.version = '1.2.9-windower'
 _addon.commands = {'partycare', 'pc'}
 _addon.desc = 'Manual party and alliance healing and remedy panel for Windower.'
 
@@ -33,7 +33,7 @@ local function save_settings()
 end
 
 local function update_members()
-    local members = PartyProvider.snapshot()
+    local members = PartyProvider.snapshot(state.model:view().config.remedies)
     if members then state.model:update_members(members) else state.model:update_members({}) end
 end
 
@@ -48,6 +48,15 @@ windower.register_event('load', function()
     if not model then error(table.concat(errors, '; ')) end
     state.model = model
     message('Loaded. Use //partycare or //pc for settings.')
+end)
+
+windower.register_event('incoming chunk', function(id, original)
+    if id == 0x076 then PartyProvider.update_status_packet(original)
+    elseif id == 0x0B then PartyProvider.clear_status_cache() end
+end)
+
+windower.register_event('zone change', function()
+    PartyProvider.clear_status_cache()
 end)
 
 windower.register_event('prerender', function()
@@ -86,8 +95,30 @@ windower.register_event('addon command', function(command, ...)
         end
     elseif command == 'hide' or command == 'show' then
         state.model:update_config(function(candidate) candidate.ui.visible = command == 'show' end)
+    elseif command == 'refreshpulse' then
+        local value = tostring(args[1] or ''):lower()
+        if value == 'on' or value == 'off' then state.model:update_config(function(candidate) candidate.ui.refresh_pulse_enabled = value == 'on' end)
+        else message('Use //pc refreshpulse on or //pc refreshpulse off.') end
+    elseif command == 'compact' then
+        local value = tostring(args[1] or ''):lower()
+        if value == 'on' or value == 'off' then
+            state.model:update_config(function(candidate)
+                candidate.ui.debuff_alert_mode = value == 'on'
+                candidate.ui.debuff_alert_preview = value == 'on'
+            end)
+        else message('Use //pc compact on or //pc compact off.') end
+    elseif command == 'alertpreview' then
+        local value = tostring(args[1] or ''):lower()
+        if value == 'on' or value == 'off' then state.model:update_config(function(candidate) candidate.ui.debuff_alert_preview = value == 'on' end)
+        else message('Use //pc alertpreview on or //pc alertpreview off.') end
+    elseif command == 'alertpos' then
+        local x, y = tonumber(args[1]), tonumber(args[2])
+        if x and y then state.model:update_config(function(candidate) candidate.ui.x = x; candidate.ui.y = y end)
+        else message('Use //pc alertpos <x> <y>.') end
+    elseif command == 'help' then
+        message('Commands: //pc, //pc save, //pc dispatch on|off, //pc show|hide, //pc refreshpulse on|off, //pc compact on|off, //pc alertpreview on|off, //pc alertpos <x> <y>.')
     else
-        message('Commands: //pc, //pc save, //pc dispatch on|off, //pc show|hide')
+        message('Use //pc help for PartyCare commands.')
     end
 end)
 
