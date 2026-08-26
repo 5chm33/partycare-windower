@@ -2,7 +2,7 @@
 -- Use //pc to open the Windower settings summary; edit this file to customize bindings, layout, and remedy priorities.
 
 return {
-    version = 12,
+    version = 19,
     ui = {
         visible = true,
         locked = false,
@@ -22,6 +22,10 @@ return {
         minimal_mode = true,
         adaptive_scale = true,
         font_scale = 1.00,
+        debuff_alert_mode = false, -- Reveal only actionable remedies; otherwise hide the alert panel entirely.
+        debuff_alert_preview = false, -- Temporary blank placement box for compact mode.
+        refresh_pulse_enabled = false, -- Pulse names above refresh_min_mp only when Refresh is confirmed absent.
+        refresh_min_mp = 150,
         show_mp = true,
         show_status = true,
         show_action_bar = false,
@@ -38,13 +42,17 @@ return {
     },
     remedies = {
         paralyze = {spell = 'Paralyna', enabled = true, priority = 100},
-        gravity = {spell = 'Erase', enabled = true, priority = 90},
-        slow = {spell = 'Erase', enabled = true, priority = 85},
-        silence = {spell = 'Silena', enabled = true, priority = 70},
-        blind = {spell = 'Blindna', enabled = true, priority = 60},
-        poison = {spell = 'Poisona', enabled = true, priority = 50},
-        bio = {spell = 'Erase', enabled = true, priority = 45},
-        dia = {spell = 'Erase', enabled = true, priority = 45},
+        doom = {spell = 'Cursna', enabled = true, priority = 97}, petrify = {spell = 'Stona', enabled = true, priority = 96},
+        curse = {spell = 'Cursna', enabled = true, priority = 95}, plague = {spell = 'Viruna', enabled = true, priority = 94},
+        disease = {spell = 'Viruna', enabled = true, priority = 93}, gravity = {spell = 'Erase', enabled = true, priority = 90},
+        bind = {spell = 'Erase', enabled = true, priority = 89}, slow = {spell = 'Erase', enabled = true, priority = 85},
+        silence = {spell = 'Silena', enabled = true, priority = 70}, blind = {spell = 'Blindna', enabled = true, priority = 60},
+        poison = {spell = 'Poisona', enabled = true, priority = 50}, bio = {spell = 'Erase', enabled = true, priority = 45},
+        dia = {spell = 'Erase', enabled = true, priority = 45}, addle = {spell = 'Erase', enabled = true, priority = 44},
+        flash = {spell = 'Erase', enabled = true, priority = 43}, stun = {spell = 'Erase', enabled = true, priority = 42},
+        elegy = {spell = 'Erase', enabled = true, priority = 40}, requiem = {spell = 'Erase', enabled = true, priority = 39},
+        helix = {spell = 'Erase', enabled = true, priority = 38}, elemental_dot = {spell = 'Erase', enabled = true, priority = 10},
+        stat_down = {spell = 'Erase', enabled = true, priority = 5},
     },
     review = {review_click_cast_enabled = false, approval_status = 'PENDING_HORIZONXI_REVIEW'},
     live_test = {manual_dispatch_enabled = true, emergency_stop = false},

@@ -42,10 +42,28 @@ The `off` command is an immediate emergency disable. PartyCare contains no healt
 
 The shared `settings.lua` file controls grid size, columns, MP display, transparency, Alliance 2/3 visibility, direct-click spell names, optional Refresh, and remedy priorities. This first Windower release uses a compact in-game settings summary and expects customization through the settings file; the Ashita build provides the full tabbed in-game editor.
 
-## Remedy Scope
+## Packet-Backed Remedy Scope
 
-The Windower release keeps the shared configured remedy rules, but it does not infer remote party-member status effects from the basic Windower party snapshot. Remedy controls therefore remain unavailable until an explicit supported status-data provider is added. Direct healing, Refresh, HP/MP display, and Alliance 2/3 card targeting are available now.
+PartyCare now reads Windower’s incoming `0x076` party-status packet for remote members of the active party and uses the local player buff list for the local member. It recognizes the configured removable effects including Poison, Slow, Paralysis, Silence, Blindness, Petrification, Curse, Doom, Disease, Plague, Bind, Gravity, Bio, Dia, Addle, Flash, Stun, Elegy, Requiem, and Helix. Generic stat-down effects, including Evasion Down, are intentionally suppressed from automatic broad-Erase recommendations until a verified per-effect remedy mapping is available. The compact alert and normal panel show only a remedy selected by the configured priority list.
+
+When Windower can determine the local spellbook, PartyCare skips an unlearned high-priority spell and falls through to the next learned, enabled remedy. For example, Slow plus Poison shows Poisona when Erase is unlearned and Poisona is learned. Status packet records apply to the active party; Alliance 2 and 3 remain safely status-unknown when Windower does not provide a corresponding remote status record.
+
+## Refresh Pulse and Compact Alert
+
+Use the commands below, then `//pc save` to persist the setting.
+
+```text
+//pc refreshpulse on|off
+//pc compact on|off
+//pc alertpreview on|off
+//pc alertpos <x> <y>
+```
+
+Refresh pulse visibly colors a member name only when PartyCare has a usable status record, the Refresh icon is confirmed absent, and the member’s current MP exceeds `refresh_min_mp`. Percentage-only records remain safely excluded.
+
+Compact mode is fully hidden while no enabled, learned remedy is actionable. When an actionable status appears, it reveals only the affected member’s name in a pulsing red treatment and one deliberate, priority-selected Remedy click area. Turning compact mode on enables a blank placement preview; turn `alertpreview` off after positioning it. The text-based Windower renderer does not expose a clickable tabbed menu, so these options are available through `//pc` commands and `settings.lua`.
 
 ## References
 
 [1]: https://horizonffxi.wiki/Macro "HorizonXI Macro Target Placeholders"
+[2]: https://github.com/Tylas11/XivParty "XivParty Windower party-status packet reference"

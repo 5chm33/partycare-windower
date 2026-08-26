@@ -1,7 +1,7 @@
 local Util = require('src.util');
 
 local Config = {};
-Config.VERSION = 12;
+Config.VERSION = 19;
 
 Config.DEFAULT = {
     version = Config.VERSION,
@@ -12,6 +12,7 @@ Config.DEFAULT = {
         layout = 'grid', grid_columns = 2, card_width = 200, card_height = 74,
         background_alpha = 0.52,
         minimal_mode = true, adaptive_scale = true, font_scale = 1.00,
+        debuff_alert_mode = false, debuff_alert_preview = false, refresh_pulse_enabled = false, refresh_min_mp = 150,
         show_mp = true, show_status = true, show_action_bar = false, show_remedy_button = true,
         show_alliance_2 = false, show_alliance_3 = false,
     },
@@ -24,13 +25,22 @@ Config.DEFAULT = {
     },
     remedies = {
         paralyze = {spell = 'Paralyna', enabled = true, priority = 100},
+        doom = {spell = 'Cursna', enabled = true, priority = 97},
+        petrify = {spell = 'Stona', enabled = true, priority = 96},
+        curse = {spell = 'Cursna', enabled = true, priority = 95},
+        plague = {spell = 'Viruna', enabled = true, priority = 94},
+        disease = {spell = 'Viruna', enabled = true, priority = 93},
         gravity = {spell = 'Erase', enabled = true, priority = 90},
+        bind = {spell = 'Erase', enabled = true, priority = 89},
         slow = {spell = 'Erase', enabled = true, priority = 85},
         silence = {spell = 'Silena', enabled = true, priority = 70},
         blind = {spell = 'Blindna', enabled = true, priority = 60},
         poison = {spell = 'Poisona', enabled = true, priority = 50},
-        bio = {spell = 'Erase', enabled = true, priority = 45},
-        dia = {spell = 'Erase', enabled = true, priority = 45},
+        bio = {spell = 'Erase', enabled = true, priority = 45}, dia = {spell = 'Erase', enabled = true, priority = 45},
+        addle = {spell = 'Erase', enabled = true, priority = 44}, flash = {spell = 'Erase', enabled = true, priority = 43},
+        stun = {spell = 'Erase', enabled = true, priority = 42}, elegy = {spell = 'Erase', enabled = true, priority = 40},
+        requiem = {spell = 'Erase', enabled = true, priority = 39}, helix = {spell = 'Erase', enabled = true, priority = 38},
+        elemental_dot = {spell = 'Erase', enabled = true, priority = 10}, stat_down = {spell = 'Erase', enabled = true, priority = 5},
     },
     review = {review_click_cast_enabled = false, approval_status = 'PENDING_HORIZONXI_REVIEW'},
     live_test = {manual_dispatch_enabled = true, emergency_stop = false},
@@ -51,6 +61,7 @@ local UI_FIELDS = {
     visible = true, locked = true, settings_open = true, x = true, y = true, settings_x = true, settings_y = true,
     width = true, height = true, member_height = true, layout = true, grid_columns = true, card_width = true, card_height = true,
     background_alpha = true, minimal_mode = true, adaptive_scale = true, font_scale = true,
+    debuff_alert_mode = true, debuff_alert_preview = true, refresh_pulse_enabled = true, refresh_min_mp = true,
     show_mp = true, show_status = true, show_action_bar = true, show_remedy_button = true,
     show_alliance_2 = true, show_alliance_3 = true,
 };
@@ -77,7 +88,7 @@ local function migrate(raw)
         local previous_version = raw.version;
         raw.version = Config.VERSION;
         raw.ui, raw.actions, raw.remedies, raw.review, raw.live_test, raw.direct_click = raw.ui or {}, raw.actions or {}, raw.remedies or {}, raw.review or {}, raw.live_test or {}, raw.direct_click or {};
-        for _, key in ipairs({'height', 'settings_open', 'settings_x', 'settings_y', 'layout', 'grid_columns', 'card_width', 'card_height', 'background_alpha', 'minimal_mode', 'adaptive_scale', 'font_scale', 'show_remedy_button', 'show_alliance_2', 'show_alliance_3'}) do
+        for _, key in ipairs({'height', 'settings_open', 'settings_x', 'settings_y', 'layout', 'grid_columns', 'card_width', 'card_height', 'background_alpha', 'minimal_mode', 'adaptive_scale', 'font_scale', 'debuff_alert_mode', 'debuff_alert_preview', 'refresh_pulse_enabled', 'refresh_min_mp', 'show_remedy_button', 'show_alliance_2', 'show_alliance_3'}) do
             if raw.ui[key] == nil then raw.ui[key] = Config.DEFAULT.ui[key]; end
         end
         for key, default_action in pairs(Config.DEFAULT.actions) do
@@ -114,6 +125,12 @@ local function migrate(raw)
         if previous_version < 12 then
             raw.ui.show_alliance_2 = false;
             raw.ui.show_alliance_3 = false;
+        end
+        if previous_version < 19 then
+            raw.ui.debuff_alert_mode = false;
+            raw.ui.debuff_alert_preview = false;
+            raw.ui.refresh_pulse_enabled = false;
+            raw.ui.refresh_min_mp = 150;
         end
         for key, default_binding in pairs(Config.DEFAULT.direct_click) do
             if key ~= 'enabled' then raw.direct_click[key] = raw.direct_click[key] or Util.copy(default_binding); end
@@ -157,7 +174,7 @@ function Config.validate(raw)
     unknown_fields(raw, ROOT_FIELDS, 'configuration', errors);
     if type(raw.ui) ~= 'table' then table.insert(errors, 'ui must be a table'); else
         unknown_fields(raw.ui, UI_FIELDS, 'ui', errors);
-        for _, key in ipairs({'visible', 'locked', 'settings_open', 'minimal_mode', 'adaptive_scale', 'show_mp', 'show_status', 'show_action_bar', 'show_remedy_button', 'show_alliance_2', 'show_alliance_3'}) do
+        for _, key in ipairs({'visible', 'locked', 'settings_open', 'minimal_mode', 'adaptive_scale', 'debuff_alert_mode', 'debuff_alert_preview', 'refresh_pulse_enabled', 'show_mp', 'show_status', 'show_action_bar', 'show_remedy_button', 'show_alliance_2', 'show_alliance_3'}) do
             if type(raw.ui[key]) == 'boolean' then result.ui[key] = raw.ui[key] else table.insert(errors, 'ui.' .. key .. ' must be boolean'); end
         end
         for _, key in ipairs({'x', 'y', 'settings_x', 'settings_y'}) do
@@ -171,6 +188,7 @@ function Config.validate(raw)
         if not Util.is_integer(raw.ui.grid_columns) or raw.ui.grid_columns < 1 or raw.ui.grid_columns > 3 then table.insert(errors, 'ui.grid_columns must be an integer from 1 to 3'); else result.ui.grid_columns = raw.ui.grid_columns; end
         if not Util.is_finite_number(raw.ui.background_alpha) or raw.ui.background_alpha < 0.15 or raw.ui.background_alpha > 0.95 then table.insert(errors, 'ui.background_alpha must be between 0.15 and 0.95'); else result.ui.background_alpha = raw.ui.background_alpha; end
         if not Util.is_finite_number(raw.ui.font_scale) or raw.ui.font_scale < 0.60 or raw.ui.font_scale > 1.80 then table.insert(errors, 'ui.font_scale must be between 0.60 and 1.80'); else result.ui.font_scale = raw.ui.font_scale; end
+        if not Util.is_integer(raw.ui.refresh_min_mp) or raw.ui.refresh_min_mp < 0 or raw.ui.refresh_min_mp > 9999 then table.insert(errors, 'ui.refresh_min_mp must be an integer from 0 to 9999'); else result.ui.refresh_min_mp = raw.ui.refresh_min_mp; end
     end
 
     if type(raw.thresholds) ~= 'table' then table.insert(errors, 'thresholds must be a table'); else

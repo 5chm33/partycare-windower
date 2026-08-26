@@ -38,19 +38,23 @@ function Party.normalize_member(raw, position)
         end
     end
 
+    local spell_availability = {};
+    if type(raw.spell_availability) == 'table' then
+        for spell, known in pairs(raw.spell_availability) do
+            if Util.is_nonempty_string(spell) and type(known) == 'boolean' then spell_availability[spell] = known; end
+        end
+    end
+
     local normalized = {
-        id = raw.id,
-        name = raw.name,
-        position = position,
-        party_slot = party_slot,
-        alliance_group = alliance_group,
-        hp = Util.clamp(raw.hp, 0, raw.hp_max),
-        hp_max = raw.hp_max,
-        mp = mp_max == 0 and 0 or Util.clamp(mp, 0, mp_max),
-        mp_max = mp_max,
-        active = raw.active ~= false,
-        status = type(raw.status) == 'string' and raw.status or '',
-        debuffs = debuffs,
+        id = raw.id, name = raw.name, position = position, party_slot = party_slot, alliance_group = alliance_group,
+        hp = Util.clamp(raw.hp, 0, raw.hp_max), hp_max = raw.hp_max,
+        mp = mp_max == 0 and 0 or Util.clamp(mp, 0, mp_max), mp_max = mp_max,
+        active = raw.active ~= false, status = type(raw.status) == 'string' and raw.status or '', debuffs = debuffs,
+        status_feed_available = raw.status_feed_available == true,
+        status_icon_count = Util.is_integer(raw.status_icon_count) and math.max(0, raw.status_icon_count) or 0,
+        status_source = type(raw.status_source) == 'string' and raw.status_source or '',
+        has_refresh = raw.has_refresh == true, refresh_known = raw.refresh_known == true,
+        spell_availability = spell_availability,
     };
     normalized.hp_percent = normalized.hp / normalized.hp_max * 100;
     normalized.mp_percent = normalized.mp_max == 0 and 0 or normalized.mp / normalized.mp_max * 100;
@@ -59,49 +63,40 @@ end
 
 function Party.normalize_members(raw_members)
     if type(raw_members) ~= 'table' then return nil, {'members must be a table'}; end
-    local members = {};
-    local seen = {};
-    local errors = {};
-
+    local members, seen, errors = {}, {}, {};
     for position, raw in ipairs(raw_members) do
         local member, error_message = Party.normalize_member(raw, position);
-        if not member then
-            table.insert(errors, 'member ' .. position .. ': ' .. error_message);
-        elseif seen[member_key(member)] then
-            table.insert(errors, 'member ' .. position .. ': duplicate member id');
-        else
-            seen[member_key(member)] = true;
-            table.insert(members, member);
-        end
+        if not member then table.insert(errors, 'member ' .. position .. ': ' .. error_message);
+        elseif seen[member_key(member)] then table.insert(errors, 'member ' .. position .. ': duplicate member id');
+        else seen[member_key(member)] = true; table.insert(members, member); end
     end
-
     if #errors > 0 then return nil, errors; end
     return members, {};
 end
 
 function Party.severity(member, thresholds)
     if not member.active then return 'inactive'; end
-    if member.hp <= 0 then return 'critical'; end
-    if member.hp_percent <= thresholds.critical_hp then return 'critical'; end
+    if member.hp <= 0 or member.hp_percent <= thresholds.critical_hp then return 'critical'; end
     if member.hp_percent <= thresholds.warning_hp then return 'warning'; end
     return 'healthy';
 end
 
-function Party.decorate_members(members, thresholds)
+function Party.decorate_members(members, thresholds, ui)
     local decorated = {};
     for index, member in ipairs(members) do
         decorated[index] = Util.copy(member);
         decorated[index].severity = Party.severity(member, thresholds);
         decorated[index].needs_attention = decorated[index].severity == 'warning' or decorated[index].severity == 'critical';
+        decorated[index].refresh_missing = ui and ui.refresh_pulse_enabled == true
+            and decorated[index].refresh_known == true and decorated[index].has_refresh ~= true
+            and decorated[index].mp > (ui.refresh_min_mp or 150);
     end
     return decorated;
 end
 
 function Party.find_member(members, id)
     local wanted = tostring(id);
-    for _, member in ipairs(members or {}) do
-        if tostring(member.id) == wanted then return member; end
-    end
+    for _, member in ipairs(members or {}) do if tostring(member.id) == wanted then return member; end end
     return nil;
 end
 

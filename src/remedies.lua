@@ -3,17 +3,17 @@ local Util = require('src.util');
 local Remedies = {};
 
 local ALIASES = {
-    paralyze = 'paralyze', paralysis = 'paralyze',
-    gravity = 'gravity', slow = 'slow',
-    silence = 'silence',
-    blind = 'blind', blindness = 'blind',
-    poison = 'poison', bio = 'bio', dia = 'dia',
+    paralyze = 'paralyze', paralysis = 'paralyze', poison = 'poison',
+    gravity = 'gravity', slow = 'slow', silence = 'silence', blind = 'blind', blindness = 'blind',
+    petrify = 'petrify', petrification = 'petrify', curse = 'curse', doom = 'doom',
+    disease = 'disease', plague = 'plague', bind = 'bind', addle = 'addle', stun = 'stun',
+    bio = 'bio', dia = 'dia', flash = 'flash', elegy = 'elegy', requiem = 'requiem', helix = 'helix',
+    elemental_dot = 'elemental_dot', stat_down = 'stat_down',
 };
 
 local function canonical(value)
     if type(value) ~= 'string' then return nil; end
-    local normalized = value:lower():gsub('^%s+', ''):gsub('%s+$', '');
-    return ALIASES[normalized];
+    return ALIASES[value:lower():gsub('^%s+', ''):gsub('%s+$', '')];
 end
 
 function Remedies.normalize_list(member)
@@ -31,13 +31,15 @@ function Remedies.normalize_list(member)
     return output;
 end
 
-function Remedies.recommend(member, rules)
+function Remedies.recommend(member, rules, spell_availability)
     if type(rules) ~= 'table' then return nil, {}; end
     local candidates = {};
     for _, debuff in ipairs(Remedies.normalize_list(member)) do
         local rule = rules[debuff];
-        if type(rule) == 'table' and rule.enabled and Util.is_nonempty_string(rule.spell) and Util.is_integer(rule.priority) then
-            table.insert(candidates, {rule_id = debuff, debuff = debuff, spell = rule.spell, priority = rule.priority});
+        local known = nil;
+        if type(rule) == 'table' and type(spell_availability) == 'table' then known = spell_availability[rule.spell]; end
+        if type(rule) == 'table' and rule.enabled and Util.is_nonempty_string(rule.spell) and Util.is_integer(rule.priority) and known ~= false then
+            table.insert(candidates, {rule_id = debuff, debuff = debuff, spell = rule.spell, priority = rule.priority, spell_known = known});
         end
     end
     table.sort(candidates, function(left, right)
