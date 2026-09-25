@@ -68,6 +68,10 @@ function Shell:render(model, now)
     if not self:available() then return nil, 'Windower texts library is unavailable'; end
     local view = model:view();
     local config = view.config;
+    if config.ui.visible ~= true then
+        self:dispose();
+        return true, nil;
+    end
     local used = {};
     self.hitboxes = {};
     local x, y = config.ui.x, config.ui.y;

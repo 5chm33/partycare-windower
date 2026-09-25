@@ -14,7 +14,7 @@ Copy the `partycare` folder into `Windower4/addons/partycare`, then load it in g
 //lua load partycare
 ```
 
-Use either command below to show or hide the Windower settings summary:
+Use either command below to open or toggle the Windower settings summary:
 
 ```text
 //partycare
